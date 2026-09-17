@@ -1,0 +1,69 @@
+{
+  "name": "magnet-flow",
+  "version": "0.4.0",
+  "description": "磁流 · 磁力下载与边下边播桌面客户端",
+  "main": "src/main.mjs",
+  "type": "module",
+  "author": "MagnetFlow",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test --test-concurrency=1 test/*.test.mjs",
+    "test:ui": "node scripts/smoke-ui.mjs",
+    "test:compat": "node scripts/smoke-compat.mjs",
+    "test:fullscreen": "node scripts/smoke-fullscreen.mjs",
+    "test:search": "node scripts/smoke-search.mjs",
+    "dist": "electron-builder --win dir"
+  },
+  "dependencies": {
+    "bencode": "4.0.1",
+    "bittorrent-tracker": "11.2.3",
+    "cross-fetch-ponyfill": "1.0.3",
+    "parse-torrent": "11.0.24",
+    "sax": "1.6.1",
+    "webtorrent": "3.0.21"
+  },
+  "devDependencies": {
+    "electron": "44.3.0",
+    "electron-builder": "26.15.3",
+    "playwright-core": "1.63.0"
+  },
+  "overrides": {
+    "@thaunknown/simple-peer": "9.12.1"
+  },
+  "build": {
+    "appId": "io.magnetflow.desktop",
+    "productName": "MagnetFlow",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "!src/assets/ffmpeg/**/*",
+      "package.json",
+      "README.md",
+      "LICENSE"
+    ],
+    "extraResources": [
+      {
+        "from": "src/assets/ffmpeg",
+        "to": "ffmpeg",
+        "filter": [
+          "**/*",
+          "!ffprobe.exe"
+        ]
+      }
+    ],
+    "asar": true,
+    "npmRebuild": false,
+    "win": {
+      "target": [
+        "dir"
+      ],
+      "signAndEditExecutable": false
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
