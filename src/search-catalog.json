@@ -1,0 +1,81 @@
+[
+  {
+    "title": "Sintel",
+    "aliases": [
+      "Sintel",
+      "辛特尔"
+    ],
+    "infoHash": "08ada5a7a6183aae1e09d831df6748d566095a10",
+    "torrentUrl": "https://webtorrent.io/torrents/sintel.torrent",
+    "detailUrl": "https://durian.blender.org/",
+    "size": 129302391,
+    "license": "CC BY 3.0",
+    "sourceUrl": "https://github.com/webtorrent/webtorrent/blob/master/docs/free-torrents.md",
+    "announce": [
+      "udp://tracker.leechers-paradise.org:6969",
+      "udp://tracker.coppersurfer.tk:6969",
+      "udp://tracker.opentrackr.org:1337",
+      "udp://explodie.org:6969",
+      "udp://tracker.empire-js.us:1337",
+      "wss://tracker.btorrent.xyz",
+      "wss://tracker.openwebtorrent.com",
+      "wss://tracker.fastcast.nz"
+    ],
+    "urlList": [
+      "https://webtorrent.io/torrents/"
+    ]
+  },
+  {
+    "title": "Big Buck Bunny",
+    "aliases": [
+      "Big Buck Bunny",
+      "大雄兔",
+      "大兔子"
+    ],
+    "infoHash": "dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c",
+    "torrentUrl": "https://webtorrent.io/torrents/big-buck-bunny.torrent",
+    "detailUrl": "https://peach.blender.org/",
+    "size": 276445467,
+    "license": "CC BY 3.0",
+    "sourceUrl": "https://github.com/webtorrent/webtorrent/blob/master/docs/free-torrents.md",
+    "announce": [
+      "udp://tracker.leechers-paradise.org:6969",
+      "udp://tracker.coppersurfer.tk:6969",
+      "udp://tracker.opentrackr.org:1337",
+      "udp://explodie.org:6969",
+      "udp://tracker.empire-js.us:1337",
+      "wss://tracker.btorrent.xyz",
+      "wss://tracker.openwebtorrent.com",
+      "wss://tracker.fastcast.nz"
+    ],
+    "urlList": [
+      "https://webtorrent.io/torrents/"
+    ]
+  },
+  {
+    "title": "Tears of Steel",
+    "aliases": [
+      "Tears of Steel",
+      "钢铁之泪"
+    ],
+    "infoHash": "209c8226b299b308beaf2b9cd3fb49212dbd13ec",
+    "torrentUrl": "https://webtorrent.io/torrents/tears-of-steel.torrent",
+    "detailUrl": "https://mango.blender.org/",
+    "size": 571426507,
+    "license": "CC BY 3.0",
+    "sourceUrl": "https://github.com/webtorrent/webtorrent/blob/master/docs/free-torrents.md",
+    "announce": [
+      "udp://tracker.leechers-paradise.org:6969",
+      "udp://tracker.coppersurfer.tk:6969",
+      "udp://tracker.opentrackr.org:1337",
+      "udp://explodie.org:6969",
+      "udp://tracker.empire-js.us:1337",
+      "wss://tracker.btorrent.xyz",
+      "wss://tracker.openwebtorrent.com",
+      "wss://tracker.fastcast.nz"
+    ],
+    "urlList": [
+      "https://webtorrent.io/torrents/"
+    ]
+  }
+]
