@@ -1,0 +1,86 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { randomBytes } from 'node:crypto';
+import WebTorrent from 'webtorrent';
+import { DownloadEngine } from '../src/core.mjs';
+import { StreamServer } from '../src/stream-server.mjs';
+
+const options = { dht: false, tracker: false, lsd: false, natUpnp: false, natPmp: false, utp: false };
+async function until(predicate, label, timeout = 25000) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) { const value = await predicate(); if (value) return value; await new Promise(resolve => setTimeout(resolve, 75)); }
+  throw new Error('Timeout: ' + label);
+}
+test('real TCP magnet transfer: partial-file seek, pause, restart, verify, selection and remove', { timeout: 80000 }, async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'magnetflow-test-'));
+  const seeder = new WebTorrent(options);
+  const payload = randomBytes(8 * 1024 * 1024 + 133);
+  const video = path.join(root, 'fixture.webm');
+  const sidecar = path.join(root, 'notes.txt');
+  await fs.writeFile(video, payload); await fs.writeFile(sidecar, 'Local integration test');
+  const seeded = await new Promise((resolve, reject) => { seeder.on('error', reject); seeder.seed([video, sidecar], { name: 'TestMovie', announce: [], pieceLength: 65536 }, resolve); });
+  let engine, server;
+  t.after(async () => {
+    await server?.close();
+    await engine?.close();
+    await new Promise(resolve => seeder.destroy(resolve));
+    await fs.rm(root, { recursive: true, force: true });
+  });
+  const config = { stateDir: path.join(root, 'state'), downloadDir: path.join(root, 'downloads'), clientOptions: options };
+  engine = await new DownloadEngine(config).init();
+  await engine.updateSettings({ downloadLimit: 768 });
+  const result = await engine.add(seeded.magnetURI);
+  const id = result.id;
+  assert.equal((await engine.add(seeded.magnetURI)).duplicate, true);
+  const download = engine.active.get(id);
+  download.addPeer(`127.0.0.1:${seeder.torrentPort}`);
+  await until(() => download.ready, 'magnet metadata via TCP');
+  const index = download.files.findIndex(f => f.name === 'fixture.webm');
+  await engine.selectFiles(id, download.files.map((_, fileIndex) => fileIndex));
+  server = await new StreamServer(engine).listen();
+  const url = server.url(id, index);
+  assert.equal((await fetch(url.replace(server.token, '0'.repeat(64)))).status, 403);
+  const head = await fetch(url, { method: 'HEAD' });
+  assert.equal(head.status, 200);
+  assert.equal(Number(head.headers.get('content-length')), payload.length);
+  assert.equal((await fetch(url, { headers: { range: `bytes=${payload.length}-` } })).status, 416);
+  // Read near the end while most data remains absent: proves seek requests drive piece fetching.
+  const start = payload.length - 22000, end = payload.length - 12001;
+  const range = await fetch(url, { headers: { range: `bytes=${start}-${end}` }, signal: AbortSignal.timeout(20000) });
+  assert.equal(range.status, 206);
+  assert.deepEqual(Buffer.from(await range.arrayBuffer()), payload.subarray(start, end + 1));
+  assert.ok(download.downloaded < download.length, 'video stream worked before download completed');
+  const first = await fetch(url, { headers: { range: 'bytes=0-0' }, signal: AbortSignal.timeout(10000) });
+  assert.deepEqual(Buffer.from(await first.arrayBuffer()), payload.subarray(0, 1));
+  await until(() => download.downloaded > 131072, 'downloaded some pieces');
+  await engine.pause(id);
+  assert.equal(engine.active.has(id), false);
+  assert.equal(engine.snapshot().tasks[0].status, 'paused');
+  const saved = await fs.stat(path.join(engine.get(id).path, 'TestMovie', 'fixture.webm'));
+  assert.ok(saved.size > 0);
+  await server.close(); server = null;
+  await engine.close();
+  engine = await new DownloadEngine(config).init();
+  assert.equal(engine.snapshot().tasks[0].status, 'paused');
+  assert.equal(engine.active.size, 0);
+  await engine.resume(id);
+  const resumed = engine.active.get(id);
+  resumed.addPeer(`127.0.0.1:${seeder.torrentPort}`);
+  await until(() => resumed.ready, 'resume verifies existing pieces');
+  assert.ok(resumed.downloaded > 0, 'verified data survived restart');
+  await engine.updateSettings({ downloadLimit: 0 });
+  await until(() => resumed.done, 'remaining transfer complete');
+  const finalFile = resumed.files.find(f => f.name === 'fixture.webm');
+  const actual = await fs.readFile(path.join(engine.get(id).path, finalFile.path));
+  assert.deepEqual(actual, payload);
+  assert.equal(engine.snapshot().tasks[0].progress, 1);
+  await engine.selectFiles(id, [index]);
+  await until(() => engine.active.get(id)?.ready, 'file selection reload');
+  assert.equal(engine.snapshot().tasks[0].files.filter(f => f.selected).length, 1);
+  await engine.remove(id);
+  assert.equal(engine.snapshot().tasks.length, 0);
+  assert.deepEqual(await fs.readFile(path.join(config.downloadDir, id, finalFile.path)), payload);
+});
